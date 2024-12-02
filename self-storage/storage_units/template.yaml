@@ -1,0 +1,85 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for Serverless Patterns v1 - Data store
+
+Globals:
+  Function:
+    Runtime: python3.9
+    MemorySize: 128
+    Timeout: 100
+    Tracing: Active
+
+Resources:
+  UnitTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-Unit
+      AttributeDefinitions:
+        - AttributeName: unitid
+          AttributeType: S
+        - AttributeName: Town
+          AttributeType: S
+        - AttributeName: Size
+          AttributeType: S
+      KeySchema:
+        - AttributeName: unitid
+          KeyType: HASH   # Partition Key
+        - AttributeName: Town
+          KeyType: RANGE  # Sort Key
+      GlobalSecondaryIndexes:
+        - IndexName: SizeIndex
+          KeySchema:
+            - AttributeName: Size
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+
+ 
+
+  ViewUnitsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/api
+      Handler: view_units.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBReadPolicy:
+          TableName: !Ref UnitTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UnitTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /storage_units
+            Method: get
+            RestApiId: !Ref RestAPI            
+
+  RestAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      TracingEnabled: true
+      Tags:
+        Name: !Sub "${AWS::StackName}-API"
+        Stack: !Sub "${AWS::StackName}"            
+
+Outputs:
+  UnitTable:
+      Description: DynamoDB Units table
+      Value: !Ref UnitTable
+
+  ViewUnitsFunction:
+    Description: "Lambda function used to perform actions on the units data"
+    Value: !Ref ViewUnitsFunction  
+
+  APIEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${RestAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod"    

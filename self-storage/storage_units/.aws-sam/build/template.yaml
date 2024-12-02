@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'SAM Template for Serverless Patterns v1 - Data store
+
+  '
+Globals:
+  Function:
+    Runtime: python3.9
+    MemorySize: 128
+    Timeout: 100
+    Tracing: Active
+Resources:
+  UnitTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${AWS::StackName}-Unit
+      AttributeDefinitions:
+      - AttributeName: unitid
+        AttributeType: S
+      - AttributeName: Town
+        AttributeType: S
+      - AttributeName: Size
+        AttributeType: S
+      KeySchema:
+      - AttributeName: unitid
+        KeyType: HASH
+      - AttributeName: Town
+        KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName: SizeIndex
+        KeySchema:
+        - AttributeName: Size
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+  ViewUnitsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ViewUnitsFunction
+      Handler: view_units.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBReadPolicy:
+          TableName:
+            Ref: UnitTable
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: UnitTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /storage_units
+            Method: get
+            RestApiId:
+              Ref: RestAPI
+    Metadata:
+      SamResourceId: ViewUnitsFunction
+  RestAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      TracingEnabled: true
+      Tags:
+        Name:
+          Fn::Sub: ${AWS::StackName}-API
+        Stack:
+          Fn::Sub: ${AWS::StackName}
+Outputs:
+  UnitTable:
+    Description: DynamoDB Units table
+    Value:
+      Ref: UnitTable
+  ViewUnitsFunction:
+    Description: Lambda function used to perform actions on the units data
+    Value:
+      Ref: ViewUnitsFunction
+  APIEndpoint:
+    Description: API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${RestAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod
