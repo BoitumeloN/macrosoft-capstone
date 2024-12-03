@@ -14,7 +14,7 @@ Globals:
     Tracing: Active
 
 Resources:
-  UnitTable:
+  StoreUnitTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Sub ${AWS::StackName}-Unit
@@ -25,6 +25,8 @@ Resources:
           AttributeType: S
         - AttributeName: Size
           AttributeType: S
+        - AttributeName: Status
+          AttributeType: S  
       KeySchema:
         - AttributeName: unitid
           KeyType: HASH   # Partition Key
@@ -34,12 +36,22 @@ Resources:
         - IndexName: SizeIndex
           KeySchema:
             - AttributeName: Size
-              KeyType: HASH
+              KeyType: HASH  # HASH key should be the first element
+            - AttributeName: unitid
+              KeyType: RANGE  # Make unitid the RANGE key for the GSI
           Projection:
             ProjectionType: ALL
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: Status
+              KeyType: HASH  # HASH key should be the first element
+            - AttributeName: unitid
+              KeyType: RANGE  # Make unitid the RANGE key for the GSI
+          Projection:
+            ProjectionType: ALL    
       BillingMode: PAY_PER_REQUEST
 
- 
+
 
   ViewUnitsFunction:
     Type: AWS::Serverless::Function
@@ -50,10 +62,10 @@ Resources:
       Tracing: Active
       Policies:
         DynamoDBReadPolicy:
-          TableName: !Ref UnitTable
+          TableName: !Ref StoreUnitTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref UnitTable
+          TABLE_NAME: !Ref StoreUnitTable
       Events:
         ApiEvent:
           Type: Api
@@ -72,9 +84,9 @@ Resources:
         Stack: !Sub "${AWS::StackName}"            
 
 Outputs:
-  UnitTable:
+  StoreUnitTable:
       Description: DynamoDB Units table
-      Value: !Ref UnitTable
+      Value: !Ref StoreUnitTable
 
   ViewUnitsFunction:
     Description: "Lambda function used to perform actions on the units data"

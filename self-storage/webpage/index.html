@@ -28,10 +28,11 @@
 <script>
     
     async function fetchStorageUnits() {
-        const apiEndpoint = 'https://your-api-endpoint.amazonaws.com/prod/storage-units';
+        const apiEndpoint = 'https://gkoq6i3yah.execute-api.eu-west-1.amazonaws.com/Prod/storage_units';
         try {
             const response = await fetch(apiEndpoint);
             const units = await response.json();
+            console.log(units)
             const unitsContainer = document.getElementById('storageUnits');
             unitsContainer.innerHTML = ''; // Clear previous units
             
@@ -39,6 +40,8 @@
                 const unitDiv = document.createElement('div');
                 unitDiv.className = 'unit';
                 unitDiv.innerHTML = `
+                    <p>Unit Id: ${unit.unitid}</p>
+                    <p>Town: ${unit.Town}</p>
                     <h3>Unit Size: ${unit.Size}</h3>
                     <p>Status: ${unit.Status}</p>
                     <button class="button" onclick="bookUnit('${unit.UnitId}')">Book Now</button>
