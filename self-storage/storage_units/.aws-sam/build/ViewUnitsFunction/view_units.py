@@ -16,7 +16,6 @@ ddbTable = dynamodb.Table(UNITS_TABLE)
 
 def lambda_handler(event, context):
     route_key = f"{event['httpMethod']} {event['resource']}"
-
     # Set default response, override with data from DynamoDB if any
     response_body = {'Message': 'Unsupported route'}
     status_code = 400
@@ -24,14 +23,12 @@ def lambda_handler(event, context):
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
         }
-
     try:
         # Get a list of all Users
-        if route_key == 'GET /storage_units':
-            ddb_response = ddbTable.scan(Select='ALL_ATTRIBUTES')
-            # return list of items instead of full DynamoDB response
-            response_body = ddb_response['Items']
-            status_code = 200
+        ddb_response = ddbTable.scan(Select='ALL_ATTRIBUTES')
+        # return list of items instead of full DynamoDB response
+        response_body = ddb_response['Items']
+        status_code = 200
        
       
     except Exception as err:

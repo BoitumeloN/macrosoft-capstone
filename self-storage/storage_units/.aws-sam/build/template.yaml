@@ -10,7 +10,7 @@ Globals:
     Timeout: 100
     Tracing: Active
 Resources:
-  StoreUnitTable:
+  SUnitTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName:
@@ -27,8 +27,6 @@ Resources:
       KeySchema:
       - AttributeName: unitid
         KeyType: HASH
-      - AttributeName: Town
-        KeyType: RANGE
       GlobalSecondaryIndexes:
       - IndexName: SizeIndex
         KeySchema:
@@ -46,6 +44,14 @@ Resources:
           KeyType: RANGE
         Projection:
           ProjectionType: ALL
+      - IndexName: TownIndex
+        KeySchema:
+        - AttributeName: Town
+          KeyType: HASH
+        - AttributeName: unitid
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
   ViewUnitsFunction:
     Type: AWS::Serverless::Function
@@ -57,11 +63,11 @@ Resources:
       Policies:
         DynamoDBReadPolicy:
           TableName:
-            Ref: StoreUnitTable
+            Ref: SUnitTable
       Environment:
         Variables:
           TABLE_NAME:
-            Ref: StoreUnitTable
+            Ref: SUnitTable
       Events:
         ApiEvent:
           Type: Api
@@ -72,6 +78,31 @@ Resources:
               Ref: RestAPI
     Metadata:
       SamResourceId: ViewUnitsFunction
+  BookUnitsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: BookUnitsFunction
+      Handler: book_units.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBReadPolicy:
+          TableName:
+            Ref: SUnitTable
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: SUnitTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /storage_units/{unitid}
+            Method: put
+            RestApiId:
+              Ref: RestAPI
+    Metadata:
+      SamResourceId: BookUnitsFunction
   RestAPI:
     Type: AWS::Serverless::Api
     Properties:
@@ -86,11 +117,7 @@ Outputs:
   StoreUnitTable:
     Description: DynamoDB Units table
     Value:
-      Ref: StoreUnitTable
-  ViewUnitsFunction:
-    Description: Lambda function used to perform actions on the units data
-    Value:
-      Ref: ViewUnitsFunction
+      Ref: SUnitTable
   APIEndpoint:
     Description: API Gateway endpoint URL
     Value:

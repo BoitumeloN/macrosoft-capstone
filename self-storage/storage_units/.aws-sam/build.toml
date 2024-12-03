@@ -7,6 +7,6 @@ architecture = "x86_64"
 handler = "view_units.lambda_handler"
 manifest_hash = ""
 packagetype = "Zip"
-functions = ["ViewUnitsFunction"]
+functions = ["ViewUnitsFunction", "BookUnitsFunction"]
 
 [layer_build_definitions]

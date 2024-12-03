@@ -28,7 +28,7 @@
 <script>
     
     async function fetchStorageUnits() {
-        const apiEndpoint = 'https://gkoq6i3yah.execute-api.eu-west-1.amazonaws.com/Prod/storage_units';
+        const apiEndpoint = 'https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage_units';
         try {
             const response = await fetch(apiEndpoint);
             const units = await response.json();
@@ -42,7 +42,7 @@
                 unitDiv.innerHTML = `
                     <p>Unit Id: ${unit.unitid}</p>
                     <p>Town: ${unit.Town}</p>
-                    <h3>Unit Size: ${unit.Size}</h3>
+                    <p>Unit Size: ${unit.Size}<p>
                     <p>Status: ${unit.Status}</p>
                     <button class="button" onclick="bookUnit('${unit.UnitId}')">Book Now</button>
                 `;
@@ -54,7 +54,7 @@
     }
 
     async function bookUnit(unitId) {
-        const apiEndpoint = `https://your-api-endpoint.amazonaws.com/prod/storage-units/${unitId}`;
+        const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
         try {
             const response = await fetch(apiEndpoint, { method: 'POST' });
             const result = await response.json();

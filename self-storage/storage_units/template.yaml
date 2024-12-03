@@ -14,7 +14,7 @@ Globals:
     Tracing: Active
 
 Resources:
-  StoreUnitTable:
+  SUnitTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Sub ${AWS::StackName}-Unit
@@ -30,8 +30,6 @@ Resources:
       KeySchema:
         - AttributeName: unitid
           KeyType: HASH   # Partition Key
-        - AttributeName: Town
-          KeyType: RANGE  # Sort Key
       GlobalSecondaryIndexes:
         - IndexName: SizeIndex
           KeySchema:
@@ -44,6 +42,14 @@ Resources:
         - IndexName: StatusIndex
           KeySchema:
             - AttributeName: Status
+              KeyType: HASH  # HASH key should be the first element
+            - AttributeName: unitid
+              KeyType: RANGE  # Make unitid the RANGE key for the GSI
+          Projection:
+            ProjectionType: ALL    
+        - IndexName: TownIndex
+          KeySchema:
+            - AttributeName: Town
               KeyType: HASH  # HASH key should be the first element
             - AttributeName: unitid
               KeyType: RANGE  # Make unitid the RANGE key for the GSI
@@ -62,17 +68,38 @@ Resources:
       Tracing: Active
       Policies:
         DynamoDBReadPolicy:
-          TableName: !Ref StoreUnitTable
+          TableName: !Ref SUnitTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref StoreUnitTable
+          TABLE_NAME: !Ref SUnitTable
       Events:
         ApiEvent:
           Type: Api
           Properties:
             Path: /storage_units
             Method: get
-            RestApiId: !Ref RestAPI            
+            RestApiId: !Ref RestAPI  
+
+  BookUnitsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/api
+      Handler: book_units.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBReadPolicy:
+          TableName: !Ref SUnitTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SUnitTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /storage_units/{unitid}
+            Method: put
+            RestApiId: !Ref RestAPI                  
 
   RestAPI:
     Type: AWS::Serverless::Api
@@ -86,11 +113,7 @@ Resources:
 Outputs:
   StoreUnitTable:
       Description: DynamoDB Units table
-      Value: !Ref StoreUnitTable
-
-  ViewUnitsFunction:
-    Description: "Lambda function used to perform actions on the units data"
-    Value: !Ref ViewUnitsFunction  
+      Value: !Ref SUnitTable
 
   APIEndpoint:
     Description: "API Gateway endpoint URL"
