@@ -54,7 +54,7 @@
     }
 
     async function bookUnit(unitId) {
-        const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
+        const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
         try {
             const response = await fetch(apiEndpoint, { method: 'POST' });
             const result = await response.json();
