@@ -22,12 +22,12 @@ Resources:
       CodeUri: ./src
       Environment:
         Variables:
-          SNS_TOPIC_ARN: !Ref StorageUnitNotificationTopic  # Reference the SNS topic ARN
+          SNS_TOPIC_ARN: !Ref StorageNotificationTopic  # Reference the SNS topic ARN
       Policies:
         - SNSPublishMessagePolicy:  # Permission to publish to SNS
-            TopicName: !Ref StorageUnitNotificationTopic
+            TopicName: !Ref StorageNotificationTopic
 
-  # API Gateway to trigger Lambda (optional)
+  # API Gateway to trigger Lambda
   StorageUnitApi:
     Type: AWS::Serverless::Api
     Properties:
