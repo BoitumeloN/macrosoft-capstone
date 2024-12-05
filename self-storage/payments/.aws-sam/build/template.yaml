@@ -1,38 +1,34 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Self Storage Application
-
 Resources:
-
   BillingDetailsTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: BillingDetails
       AttributeDefinitions:
-        - AttributeName: "id"
-          AttributeType: "S"
+      - AttributeName: id
+        AttributeType: S
       KeySchema:
-        - AttributeName: "id"
-          KeyType: "HASH"
+      - AttributeName: id
+        KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
-
   ProcessPaymentApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: PaymentApi
       StageName: Prod
-
   ProcessPaymentFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/api
+      CodeUri: ProcessPaymentFunction
       Handler: process_payment.lambda_handler
       Runtime: python3.9
       Policies:
-        - DynamoDBCrudPolicy: 
-            TableName: BillingDetails # Update with your DynamoDB table
+      - DynamoDBCrudPolicy:
+          TableName: BillingDetails
       Environment:
         Variables:
           PAYPAL_CLIENT_ID: AWiNyGjGGsBkUdK2BIgGEromigu4QFVYW05lKt8aeYXrfLyrnLVBt8Lbad0AaKehWnVUvz5w9Mv95Yh9
@@ -41,38 +37,42 @@ Resources:
         PaymentApi:
           Type: Api
           Properties:
-            RestApiId: !Ref ProcessPaymentApi
+            RestApiId:
+              Ref: ProcessPaymentApi
             Path: /payment
             Method: post
-
+    Metadata:
+      SamResourceId: ProcessPaymentFunction
   GetBillingDetailsApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: BillingApi
       StageName: Prod
-
   GetBillingDetailsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/api
+      CodeUri: GetBillingDetailsFunction
       Handler: get_billing_details.lambda_handler
       Runtime: python3.9
       Policies:
-        - DynamoDBCrudPolicy: 
-            TableName: BillingDetails # Update with your DynamoDB table
+      - DynamoDBCrudPolicy:
+          TableName: BillingDetails
       Events:
         BillingApi:
           Type: Api
           Properties:
-            RestApiId: !Ref GetBillingDetailsApi
+            RestApiId:
+              Ref: GetBillingDetailsApi
             Path: /billing
             Method: get
-
+    Metadata:
+      SamResourceId: GetBillingDetailsFunction
 Outputs:
   ProcessPaymentApi:
-    Description: "API Gateway endpoint URL for Payment function"
-    Value: !Sub "https://${ProcessPaymentApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
-    
+    Description: API Gateway endpoint URL for Payment function
+    Value:
+      Fn::Sub: https://${ProcessPaymentApi}.execute-api.${AWS::Region}.amazonaws.com/Prod
   GetBillingDetailsApi:
-    Description: "API Gateway endpoint URL for Billing function"
-    Value: !Sub "https://${GetBillingDetailsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+    Description: API Gateway endpoint URL for Billing function
+    Value:
+      Fn::Sub: https://${GetBillingDetailsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod
