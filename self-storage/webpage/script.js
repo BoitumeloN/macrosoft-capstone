@@ -15,8 +15,8 @@ async function fetchStorageUnits() {
                 <p>Town: ${unit.Town}</p>
                 <p>Unit Size: ${unit.Size}</p>
                 <p>Status: ${unit.Status}</p>
-                ${unit.Status === 'Available' ? `<button class="button" onclick="bookUnit('${unit.UnitId}')">Book Now</button>` : ''}
-                ${unit.Status === 'Booked' ? `<button class="button" onclick="cancelRental('${unit.UnitId}')">Cancel</button>` : ''}
+                ${unit.Status === 'Available' ? `<button class="button" onclick="bookUnit('${unit.unitid}')">Book Now</button>` : ''}
+                ${unit.Status === 'Booked' ? `<button class="button" onclick="cancelRental('${unit.unitid}')">Cancel</button>` : ''}
             `;
             unitsContainer.appendChild(unitDiv);
         });
