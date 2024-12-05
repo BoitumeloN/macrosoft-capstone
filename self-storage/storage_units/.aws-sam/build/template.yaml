@@ -86,7 +86,7 @@ Resources:
       Runtime: python3.9
       Tracing: Active
       Policies:
-        DynamoDBReadPolicy:
+        DynamoDBCrudPolicy:
           TableName:
             Ref: SUnitTable
       Environment:
@@ -103,6 +103,63 @@ Resources:
               Ref: RestAPI
     Metadata:
       SamResourceId: BookUnitsFunction
+  CancelRentalFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: CancelRentalFunction
+      Handler: cancel_units.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBCrudPolicy:
+          TableName:
+            Ref: SUnitTable
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: SUnitTable
+      Events:
+        CancelRental:
+          Type: Api
+          Properties:
+            Path: /storage_units/{unitid}/cancel
+            Method: post
+            RestApiId:
+              Ref: RestAPI
+    Metadata:
+      SamResourceId: CancelRentalFunction
+  ManageUnitStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ManageUnitStatusFunction
+      Handler: manage_unit_status.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBCrudPolicy:
+          TableName:
+            Ref: SUnitTable
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: SUnitTable
+      Events:
+        GetUnitStatus:
+          Type: Api
+          Properties:
+            Path: /storage_units/status/{status}
+            Method: get
+            RestApiId:
+              Ref: RestAPI
+        UpdateUnitStatus:
+          Type: Api
+          Properties:
+            Path: /storage_units/{unitid}/status/{status}
+            Method: put
+            RestApiId:
+              Ref: RestAPI
+    Metadata:
+      SamResourceId: ManageUnitStatusFunction
   RestAPI:
     Type: AWS::Serverless::Api
     Properties:

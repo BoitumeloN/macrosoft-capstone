@@ -16,7 +16,7 @@
 <body>
 
 <header>
-    <h1>Digital Self-Storage</h1>
+    <h1>Macrosoft-Capstone-DSstorage</h1>
 </header>
 
 <div class="container">
@@ -24,50 +24,6 @@
     <div id="storageUnits"></div>
     <button class="button" onclick="fetchStorageUnits()">Refresh Units</button>
 </div>
-
-<script>
-    
-    async function fetchStorageUnits() {
-        const apiEndpoint = 'https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage_units';
-        try {
-            const response = await fetch(apiEndpoint);
-            const units = await response.json();
-            console.log(units)
-            const unitsContainer = document.getElementById('storageUnits');
-            unitsContainer.innerHTML = ''; // Clear previous units
-            
-            units.forEach(unit => {
-                const unitDiv = document.createElement('div');
-                unitDiv.className = 'unit';
-                unitDiv.innerHTML = `
-                    <p>Unit Id: ${unit.unitid}</p>
-                    <p>Town: ${unit.Town}</p>
-                    <p>Unit Size: ${unit.Size}<p>
-                    <p>Status: ${unit.Status}</p>
-                    <button class="button" onclick="bookUnit('${unit.UnitId}')">Book Now</button>
-                `;
-                unitsContainer.appendChild(unitDiv);
-            });
-        } catch (error) {
-            console.error('Error fetching storage units:', error);
-        }
-    }
-
-    async function bookUnit(unitId) {
-        const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
-        try {
-            const response = await fetch(apiEndpoint, { method: 'POST' });
-            const result = await response.json();
-            alert(result.message);
-            fetchStorageUnits(); // Refresh the list
-        } catch (error) {
-            console.error('Error booking unit:', error);
-        }
-    }
-
-    // Initial fetch
-    fetchStorageUnits();
-</script>
-
+<script src="./script.js"></script>_
 </body>
 </html>
