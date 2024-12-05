@@ -1,0 +1,14 @@
+{
+    "unitid": {
+      "S": "5"
+    },
+    "Town":{
+        "S": "Durban"
+    },
+    "Size": {
+      "S": "Garage"
+    },
+    "Status":{
+        "S": "Reserved"
+    }
+  }
