@@ -1,5 +1,5 @@
 async function fetchStorageUnits() {
-    const apiEndpoint = 'https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage_units';
+    const apiEndpoint = 'https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units';
     try {
         const response = await fetch(apiEndpoint);
         const units = await response.json();
@@ -26,7 +26,7 @@ async function fetchStorageUnits() {
 }
 
 async function bookUnit(unitId) {
-    const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, { method: 'POST' });
         const result = await response.json();
@@ -39,7 +39,7 @@ async function bookUnit(unitId) {
 
 
 async function updateStatus(unitId, newStatus) {
-    const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, {
             method: 'PUT', // Change method to PUT for updates
@@ -58,7 +58,7 @@ async function updateStatus(unitId, newStatus) {
 
 
 async function cancelRental(unitId) {
-    const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, {
             method: 'DELETE',
