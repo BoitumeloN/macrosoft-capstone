@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Globals:
+  Function:
+    Timeout: 10
+
+Resources:
+  # SNS Topic for Notifications
+  StorageUnitNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: "Storage Unit Notifications"
+      TopicName: "storage-unit-notifications"
+
+  # Lambda Function for Sending Notifications
+  SendNotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: send_notification.lambda_handler
+      Runtime: python3.8
+      CodeUri: ./src
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref StorageUnitNotificationTopic  # Reference the SNS topic ARN
+      Policies:
+        - SNSPublishMessagePolicy:  # Permission to publish to SNS
+            TopicName: !Ref StorageUnitNotificationTopic
+
+  # API Gateway to trigger Lambda (optional)
+  StorageUnitApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: StorageUnitApi
+      StageName: prod
+      DefinitionBody:
+        swagger: "2.0"
+        paths:
+          /notify:
+            post:
+              summary: "Trigger Notification"
+              operationId: "TriggerNotification"
+              consumes:
+                - application/json
+              responses:
+                200:
+                  description: "Notification sent successfully"
+              x-amazon-apigateway-integration:
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendNotificationFunction.Arn}/invocations
+                httpMethod: POST
+                type: aws_proxy
