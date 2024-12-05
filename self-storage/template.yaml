@@ -23,6 +23,13 @@ Parameters:
 
     
 Resources:
+
+  # MyS3Bucket:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     BucketName: self-storage-bucket
+
+
   SUnitTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -67,7 +74,6 @@ Resources:
       BillingMode: PAY_PER_REQUEST
 
 
-
   ViewUnitsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -88,6 +94,9 @@ Resources:
             Path: /storage_units
             Method: get
             RestApiId: !Ref RestAPI  
+            Auth:
+              Authorizer: NONE  # No authentication required
+
 
   BookUnitsFunction:
     Type: AWS::Serverless::Function
@@ -108,29 +117,152 @@ Resources:
           Properties:
             Path: /storage_units/{unitid}
             Method: put
-            RestApiId: !Ref RestAPI     
+            RestApiId: !Ref RestAPI
+            Auth:
+              Authorizer: NONE     
 
-  # Role:
-  # Type: AWS::IAM::Role
-  # Properties:
-  #   AssumeRolePolicyDocument:
-  #     Version: '2012-10-17'
-  #     Statement:
-  #       - Effect: Allow
-  #         Principal:
-  #           Service: lambda.amazonaws.com
-  #         Action: sts:AssumeRole
-  #   Policies:
-  #     - PolicyName: LambdaExecutionPolicy
-  #       PolicyDocument:
-  #         Version: '2012-10-17'
-  #         Statement:
-  #           - Effect: Allow 
-  #             Action:
-  #               - s3:ListBucket
-  #               - s3:GetObject
-  #               - lambda:InvokeFunction
-  #             Resource: '*'      
+
+  CancelRentalFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: storage_units/src/api
+      Handler: cancel_units.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBCrudPolicy:
+          TableName: !Ref SUnitTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SUnitTable
+      Events:
+        CancelRental:
+          Type: Api
+          Properties:
+            Path: /storage_units/{unitid}/cancel
+            Method: post
+            RestApiId: !Ref RestAPI  
+            Auth:
+              Authorizer: NONE   
+
+
+  ManageUnitStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: storage_units/src/api
+      Handler: manage_unit_status.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBCrudPolicy:
+          TableName: !Ref SUnitTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SUnitTable
+      Events:
+        GetUnitStatus:
+          Type: Api
+          Properties:
+            Path: /storage_units/status/{status}
+            Method: get
+            RestApiId: !Ref RestAPI
+            Auth:
+              Authorizer: NONE 
+        UpdateUnitStatus:
+          Type: Api
+          Properties:
+            Path: /storage_units/{unitid}/status/{status}
+            Method: put
+            RestApiId: !Ref RestAPI
+            Auth:
+              Authorizer: NONE  
+
+
+  PostConfirmationLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: cognito_auth/post_confirmation.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      FunctionName: PostConfirmationLambdaFunction
+      Code:
+        S3Bucket: macrosoft-capstone-storage
+        S3Key: code/post_confirmation.zip
+      Runtime: python3.9
+      MemorySize: 128
+      Timeout: 5
+
+
+  AuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cognito_auth/authorize.lambda_handler
+      Description: Handler for Lambda authorizer
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPool
+          APPLICATION_CLIENT_ID: !Ref UserPoolClient
+          ADMIN_GROUP_NAME: !Ref UserPoolAdminGroupName
+      Tags:
+        Stack: !Sub "${AWS::StackName}"
+
+  RestAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      TracingEnabled: true
+      Tags:
+        Name: !Sub "${AWS::StackName}-API"
+        Stack: !Sub "${AWS::StackName}" 
+      Auth:
+        DefaultAuthorizer: LambdaTokenAuthorizer
+        Authorizers:
+          LambdaTokenAuthorizer:
+            FunctionArn: !GetAtt AuthorizerFunction.Arn
+            Identity:
+              Headers:
+                - Authorization
+                  
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow 
+                Action:
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - lambda:InvokeFunction
+                Resource: '*'      
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "CognitoPostConfirmationPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "cognito-idp:AdminAddUserToGroup"
+                Resource: "*"
 
 
    # Cognito User Pool
@@ -138,24 +270,13 @@ Resources:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: !Sub ${AWS::StackName}-UserPool
+      LambdaConfig:
+        PostConfirmation: !GetAtt PostConfirmationLambdaFunction.Arn
       AliasAttributes:
         - email
       AutoVerifiedAttributes:
         - email
-      # MfaConfiguration: OFF
-      # PasswordPolicy:
-      #   MinimumLength: 8
-      #   RequireUppercase: true
-      #   RequireLowercase: true
-      #   RequireNumbers: true
-      #   RequireSymbols: true
-      #   TemporaryPasswordValidityDays: 7
-      # AccountRecoverySetting:
-      #   RecoveryMechanisms:
-      #     - Name: "verified_email"
-      #       Priority: 1
-      #     - Name: "verified_phone_number"
-      #       Priority: 2
+  
       Schema:
         - Name: given_name
           AttributeDataType: String
@@ -193,40 +314,15 @@ Resources:
       RefreshTokenValidity: 30
       SupportedIdentityProviders: 
         - COGNITO
-      UserPoolId: !Ref UserPool
       AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows:
         - "code"
       AllowedOAuthScopes:
         - "email"
         - "openid"
-        - "phone"
       CallbackURLs:
         - "http://localhost:5000"
-      # TokenValidityUnits:
-      #   AccessToken: "minutes"
-      #   IdToken: "minutes"
-      #   RefreshToken: "days"
-      # AccessTokenValidity: 60    # Valid for 60 minutes
-      # IdTokenValidity: 60        # Valid for 60 minutes
-      # RefreshTokenValidity: 30 
-      # PreventUserExistenceErrors: "ENABLED"
-      # EnableTokenRevocation: true
-      # EnablePropagateAdditionalUserContextData: false
-  
 
-  AuthorizerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: cognito_auth/authorize.lambda_handler
-      Description: Handler for Lambda authorizer
-      Environment:
-        Variables:
-          USER_POOL_ID: !Ref UserPool
-          APPLICATION_CLIENT_ID: !Ref UserPoolClient
-          ADMIN_GROUP_NAME: !Ref UserPoolAdminGroupName
-      Tags:
-        Stack: !Sub "${AWS::StackName}"
 
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
@@ -242,14 +338,16 @@ Resources:
       Precedence: 0
       UserPoolId: !Ref UserPool
 
-  RestAPI:
-    Type: AWS::Serverless::Api
+  # Users Group
+  TenantsUsersGroup:
+    Type: AWS::Cognito::UserPoolGroup
     Properties:
-      StageName: Prod
-      TracingEnabled: true
-      Tags:
-        Name: !Sub "${AWS::StackName}-API"
-        Stack: !Sub "${AWS::StackName}"            
+      UserPoolId: !Ref UserPool
+      GroupName: TenantsUsersGroup
+      Description: "Group for general application users"
+      Precedence: 2 
+
+             
 
 Outputs:
   StoreUnitTable:
