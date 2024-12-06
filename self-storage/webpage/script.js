@@ -10,12 +10,13 @@ async function fetchStorageUnits() {
         units.forEach(unit => {
             const unitDiv = document.createElement('div');
             unitDiv.className = 'unit';
+            console.log(1);
             unitDiv.innerHTML = `
                 <p>Unit Id: ${unit.unitid}</p>
                 <p>Town: ${unit.Town}</p>
                 <p>Unit Size: ${unit.Size}</p>
                 <p>Status: ${unit.Status}</p>
-                ${unit.Status === 'Available' ? `<button class="button" onclick="bookUnit('${unit.UnitId}')">Book Now</button>` : ''}
+                ${unit.Status === 'Available' ? `<button class="button" onclick="bookUnit('${unit.unitid}')">Book Now</button>` : ''}
                 ${unit.Status === 'Booked' ? `<button class="button" onclick="cancelRental('${unit.UnitId}')">Cancel</button>` : ''}
             `;
             unitsContainer.appendChild(unitDiv);
@@ -26,7 +27,7 @@ async function fetchStorageUnits() {
 }
 
 async function bookUnit(unitId) {
-    const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
+    const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, { method: 'POST' });
         const result = await response.json();
