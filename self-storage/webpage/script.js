@@ -28,7 +28,7 @@ async function fetchStorageUnits() {
 }
 
 async function bookUnit(unitId) {
-    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, { method: 'POST' });
         const result = await response.json();
@@ -60,7 +60,7 @@ async function updateStatus(unitId, newStatus) {
 
 
 async function cancelRental(unitId) {
-    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, {
             method: 'DELETE',

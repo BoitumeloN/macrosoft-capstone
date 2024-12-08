@@ -74,13 +74,13 @@ def lambda_handler(event, context):
         print(f"Booking unit: {unitid}")
         update_response = ddbTable.update_item(
             Key={"unitid": unitid},
-            UpdateExpression="SET #Status = :unavailable, #bookingTime = :time",
+            UpdateExpression="SET #Status = :reserved, #bookingTime = :time",
             ExpressionAttributeNames={
                 '#Status': 'Status',
                 '#bookingTime': 'bookingTimestamp'
             },
             ExpressionAttributeValues={
-                ':unavailable': 'Unavailable',
+                ':reserved': 'Reserved',
                 ':time': datetime.now().isoformat(),
                 ':Available': 'Available'
             },

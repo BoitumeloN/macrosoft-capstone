@@ -27,10 +27,33 @@ def lambda_handler(event, context):
         
         body = json.loads(event['body'])
         unitid = body.get("unitid")
-
+    
         if not unitid:
             raise ValueError("Missing 'unitid' in request")
 
+        # Extract the JWT token from the event
+        token = event['headers'].get('Authorization')
+        if not token:
+            raise ValueError("Authorization token is missing")
+
+        # Initialize the Cognito client
+        cognito_client = boto3.client('cognito-idp')
+
+        # Get the user information from the token
+        user_info = cognito_client.get_user(
+            AccessToken=token
+        )
+
+        # Check if the user is in the TenantsUsersGroup
+        user_groups = cognito_client.admin_list_groups_for_user(
+            UserPoolId=os.getenv('USER_POOL_ID'),
+            Username=user_info['Username']
+        )
+
+        is_tenant = any(group['GroupName'] == 'TenantsUsersGroup' for group in user_groups['Groups'])
+        if not is_tenant:
+            raise ValueError("User is not authorized to book units")
+        
         print(f"Fetching unit with ID: {unitid}")
         
         # Fetch the unit details
@@ -51,13 +74,13 @@ def lambda_handler(event, context):
         print(f"Booking unit: {unitid}")
         update_response = ddbTable.update_item(
             Key={"unitid": unitid},
-            UpdateExpression="SET #Status = :unavailable, #bookingTime = :time",
+            UpdateExpression="SET #Status = :reserved, #bookingTime = :time",
             ExpressionAttributeNames={
                 '#Status': 'Status',
                 '#bookingTime': 'bookingTimestamp'
             },
             ExpressionAttributeValues={
-                ':unavailable': 'Unavailable',
+                ':reserved': 'Reserved',
                 ':time': datetime.now().isoformat(),
                 ':Available': 'Available'
             },
