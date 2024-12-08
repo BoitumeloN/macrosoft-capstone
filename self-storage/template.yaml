@@ -117,7 +117,7 @@ Resources:
           TableName: !Ref SUnitTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref SUnitTable
+          UNITS_TABLE: !Ref SUnitTable
       Events:
         ApiEvent:
           Type: Api
@@ -145,7 +145,7 @@ Resources:
               Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SUnitTable}
       Environment:
         Variables:
-          TABLE_NAME: !Ref SUnitTable
+          UNITS_TABLE: !Ref SUnitTable
       Events:
         ApiEvent:
           Type: Api
@@ -168,7 +168,7 @@ Resources:
           TableName: !Ref SUnitTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref SUnitTable
+          UNITS_TABLE: !Ref SUnitTable
       Events:
         CancelRental:
           Type: Api
@@ -191,7 +191,7 @@ Resources:
           TableName: !Ref SUnitTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref SUnitTable
+          UNITS_TABLE: !Ref SUnitTable
       Events:
         GetUnitStatus:
           Type: Api

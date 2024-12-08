@@ -8,14 +8,14 @@ import boto3
 from datetime import datetime
 
 # Prepare DynamoDB client
-UNITS_TABLE = os.getenv('TABLE_NAME')
+UNITS_TABLE = os.getenv('UNITS_TABLE', None)
 dynamodb = boto3.resource('dynamodb')
 ddbTable = dynamodb.Table(UNITS_TABLE)
-
+  
 
 
 def lambda_handler(event, context):
-    route_key = f"{event['httpMethod']} {event['resource']}"
+   
     # Set default response, override with data from DynamoDB if any
     response_body = {'Message': 'Unsupported route'}
     status_code = 400

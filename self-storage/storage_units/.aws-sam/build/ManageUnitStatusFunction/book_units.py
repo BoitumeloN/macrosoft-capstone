@@ -22,11 +22,7 @@ def lambda_handler(event, context):
 
     try:
         # Validate request body
-        if 'body' not in event or not event['body']:
-            raise ValueError("Request body is missing")
-        
-        body = json.loads(event['body'])
-        unitid = body.get("unitid")
+        unitid = event['pathParameters'].get('unitid')
     
         if not unitid:
             raise ValueError("Missing 'unitid' in request")

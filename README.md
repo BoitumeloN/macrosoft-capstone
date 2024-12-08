@@ -12,10 +12,10 @@ curl $API_ENDPOINT/storage_units
 curl -X GET "$API_ENDPOINT/storage_units/status/Unavailable"
 
 #### BookUnit 
-curl -X PUT "$API_ENDPOINT/storage_units/2" -H "Content-Type: application/json" -d '{"unitid": "1"}'
+curl -X PUT "$API_ENDPOINT/storage_units/3" -H "Content-Type: application/json" -d '{"unitid": "1"}'
 
 #### Cancel Unit 
-curl -X POST "$API_ENDPOINT/storage_units/1/cancel" -H "Content-Type: application/json" -d '{"unitid": "1"}'
+curl -X POST "$API_ENDPOINT/storage_units/2/cancel" -H "Content-Type: application/json" -d '{"unitid": "1"}'
 
 #### Admin changes avaialability
 curl -X PUT "$API_ENDPOINT/storage_units/1/status/Available" -H "Content-Type: application/json" -d '{"unitid": "1"}'
