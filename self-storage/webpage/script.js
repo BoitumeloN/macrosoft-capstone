@@ -1,3 +1,5 @@
+const apiEndpoint = 'https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod';
+
 async function fetchStorageUnits() {
     const apiEndpoint = 'https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units';
     try {
@@ -74,5 +76,52 @@ async function cancelRental(unitId) {
     }
 }
 
-// Initial fetch
+function login() {
+    // Redirect to the Cognito login page
+    const cognitoLoginUrl = 'https://eu-west-1pv6wty3qq.auth.eu-west-1.amazoncognito.com/login?client_id=44t95jhbmn74mjqh99tn2lbhih&response_type=code&scope=email+openid+phone&redirect_uri=https%3A%2F%2Fstaging.d3ag89p672ppgq.amplifyapp.com%2F';
+    window.location.href = cognitoLoginUrl;
+}
+
+
+function signout() {
+    // Clear the authentication token and redirect to the home page
+    localStorage.removeItem('authToken');
+    window.location.href = '/';
+}
+
+async function checkAuthStatus() {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+        document.querySelector('.login-button').style.display = 'block';
+        document.querySelector('.signout-button').style.display = 'none';
+        return;
+    }
+
+    try {
+        const response = await fetch(`${apiEndpoint}/validateAuthToken`, {
+
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authToken
+            }
+        });
+
+        if (response.status === 200) {
+            document.querySelector('.login-button').style.display = 'none';
+            document.querySelector('.signout-button').style.display = 'block';
+        } else {
+            document.querySelector('.login-button').style.display = 'block';
+            document.querySelector('.signout-button').style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error checking auth status:', error);
+        document.querySelector('.login-button').style.display = 'block';
+        document.querySelector('.signout-button').style.display = 'none';
+    }
+}
+
+// Initial fetch and check authentication status
 fetchStorageUnits();
+checkAuthStatus();
+

@@ -23,13 +23,6 @@ Parameters:
 
     
 Resources:
-
-  # MyS3Bucket:
-  #   Type: AWS::S3::Bucket
-  #   Properties:
-  #     BucketName: self-storage-bucket
-
-
   SUnitTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -205,6 +198,29 @@ Resources:
       Tags:
         Stack: !Sub "${AWS::StackName}"
 
+  ValidateAuthTokenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cognito_auth/validate_auth_token.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPoolId
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:GetUser
+                - cognito-idp:AdminListGroupsForUser
+              Resource: "*"
+      Events:
+        ValidateAuthTokenApi:
+          Type: Api
+          Properties:
+            Path: /validateAuthToken
+            Method: post
+
   RestAPI:
     Type: AWS::Serverless::Api
     Properties:
@@ -262,73 +278,7 @@ Resources:
               - Effect: "Allow"
                 Action:
                   - "cognito-idp:AdminAddUserToGroup"
-                Resource: "*"
-
-
-   # Cognito User Pool
-  UserPool:
-    Type: AWS::Cognito::UserPool
-    Properties:
-      UserPoolName: !Sub ${AWS::StackName}-UserPool
-      LambdaConfig:
-        PostConfirmation: !GetAtt PostConfirmationLambdaFunction.Arn
-      AliasAttributes:
-        - email
-      AutoVerifiedAttributes:
-        - email
-  
-      Schema:
-        - Name: given_name
-          AttributeDataType: String
-          Required: true
-          Mutable: true
-        - Name: family_name
-          AttributeDataType: String
-          Required: true
-          Mutable: true
-        - Name: address
-          AttributeDataType: String
-          Required: true
-          Mutable: true
-        - Name: email
-          AttributeDataType: String
-          Required: false
-          Mutable: true
-        - Name: phone_number
-          AttributeDataType: String
-          Required: false
-          Mutable: true
-
-  # Cognito User Pool Client
-  UserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
-    Properties:
-      ClientName: !Sub ${AWS::StackName}UserPoolClient
-      UserPoolId: !Ref UserPool
-      ExplicitAuthFlows:
-        - ALLOW_REFRESH_TOKEN_AUTH
-        - ALLOW_USER_PASSWORD_AUTH
-        - ALLOW_USER_SRP_AUTH
-      GenerateSecret: false
-      PreventUserExistenceErrors: ENABLED
-      RefreshTokenValidity: 30
-      SupportedIdentityProviders: 
-        - COGNITO
-      AllowedOAuthFlowsUserPoolClient: true
-      AllowedOAuthFlows:
-        - "code"
-      AllowedOAuthScopes:
-        - "email"
-        - "openid"
-      CallbackURLs:
-        - "http://localhost:5000"
-
-
-  UserPoolDomain:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties: 
-      Domain: !Ref UserPoolClient
-      UserPoolId: !Ref UserPool
+                Resource: "*"  
 
   ApiAdministratorsUserPoolGroup:
     Type: AWS::Cognito::UserPoolGroup
@@ -346,7 +296,6 @@ Resources:
       GroupName: TenantsUsersGroup
       Description: "Group for general application users"
       Precedence: 2 
-
              
 
 Outputs:
