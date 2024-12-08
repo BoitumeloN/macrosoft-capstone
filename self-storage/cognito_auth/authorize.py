@@ -86,13 +86,29 @@ def lambda_handler(event, context):
     # *** Section 2 : authorization rules
     # Allow all public resources/methods explicitly
 
-    # Add user specific resources/methods
-    policy.allow_method(HttpVerb.GET, f"/users/{principal_id}")
-    policy.allow_method(HttpVerb.PUT, f"/users/{principal_id}")
-    policy.allow_method(HttpVerb.DELETE, f"/users/{principal_id}")
-    policy.allow_method(HttpVerb.GET, f"/users/{principal_id}/*")
-    policy.allow_method(HttpVerb.PUT, f"/users/{principal_id}/*")
-    policy.allow_method(HttpVerb.DELETE, f"/users/{principal_id}/*")
+    # Allow methods for regular users on their own storage units
+    policy.allow_method(HttpVerb.GET, f"/storage_units/{principal_id}")
+    policy.allow_method(HttpVerb.PUT, f"/storage_units/{principal_id}")
+    policy.allow_method(HttpVerb.POST, f"/storage_units/{principal_id}")
+    policy.allow_method(HttpVerb.GET, f"/storage_units/{principal_id}/*")
+    policy.allow_method(HttpVerb.PUT, f"/storage_units/{principal_id}/*")
+    policy.allow_method(HttpVerb.POST, f"/storage_units/{principal_id}/*")
+
+    # Allow methods for regular users on their own profiles
+    policy.allow_method(HttpVerb.GET, f"/profiles/{principal_id}")
+    policy.allow_method(HttpVerb.PUT, f"/profiles/{principal_id}")
+    policy.allow_method(HttpVerb.DELETE, f"/profiles/{principal_id}")
+    policy.allow_method(HttpVerb.GET, f"/profiles/{principal_id}/*")
+    policy.allow_method(HttpVerb.PUT, f"/profiles/{principal_id}/*")
+    policy.allow_method(HttpVerb.DELETE, f"/profiles/{principal_id}/*")
+
+    # Allow methods for regular users on notifications
+    policy.allow_method(HttpVerb.GET, f"/notifications/{principal_id}")
+    policy.allow_method(HttpVerb.PUT, f"/notifications/{principal_id}")
+    policy.allow_method(HttpVerb.DELETE, f"/notifications/{principal_id}")
+    policy.allow_method(HttpVerb.GET, f"/notifications/{principal_id}/*")
+    policy.allow_method(HttpVerb.PUT, f"/notifications/{principal_id}/*")
+    policy.allow_method(HttpVerb.DELETE, f"/notifications/{principal_id}/*")
 
     # Look for admin group in Cognito groups
     # Assumption: admin group always has higher precedence
@@ -140,7 +156,7 @@ class AuthPolicy(object):
     statements for the final policy"""
     allowMethods = []
     denyMethods = []
-    restApiId = "9romacwbx9" 
+    restApiId = ["y1ceks7lrg","ofit4zubld", "0jwqogxfw5", "azj8qg4dqh","s8k7smzig6"] 
     """ Replace the placeholder value with a default API Gateway API id to be used in the policy. 
     Beware of using '*' since it will not simply mean any API Gateway API id, because stars will greedily expand over '/' or other separators. 
     See https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html for more details. """
@@ -174,24 +190,26 @@ class AuthPolicy(object):
         if resource[:1] == "/":
             resource = resource[1:]
 
-        resource_arn = ("arn:aws:execute-api:" +
-                        self.region + ":" +
-                        self.awsAccountId + ":" +
-                        self.restApiId + "/" +
-                        self.stage + "/" +
-                        verb + "/" +
-                        resource)
+        for restApiId in self.restApiIds:
 
-        if effect.lower() == "allow":
-            self.allowMethods.append({
-                'resourceArn': resource_arn,
-                'conditions': conditions
-            })
-        elif effect.lower() == "deny":
-            self.denyMethods.append({
-                'resourceArn': resource_arn,
-                'conditions': conditions
-            })
+            resource_arn = ("arn:aws:execute-api:" +
+                            self.region + ":" +
+                            self.awsAccountId + ":" +
+                            restApiId + "/" +
+                            self.stage + "/" +
+                            verb + "/" +
+                            resource)
+
+            if effect.lower() == "allow":
+                self.allowMethods.append({
+                    'resourceArn': resource_arn,
+                    'conditions': conditions
+                })
+            elif effect.lower() == "deny":
+                self.denyMethods.append({
+                    'resourceArn': resource_arn,
+                    'conditions': conditions
+                })
 
     def _get_empty_statement(self, effect):
         """Returns an empty statement object prepopulated with the correct action and the
