@@ -48,12 +48,13 @@ async function bookUnit(unitId) {
 
 
 async function updateStatus(unitId, newStatus) {
-    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}/status/${newStatus}`;
     try {
         const response = await fetch(apiEndpoint, {
             method: 'PUT', // Change method to PUT for updates
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}` // Include your Cognito token
             },
             body: JSON.stringify({ status: newStatus })
         });
@@ -73,12 +74,12 @@ async function cancelRental(unitId) {
         return;
     }
 
-    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}/cancel`;
     try {
         const response = await fetch(apiEndpoint, {
-            method: 'DELETE',
+            method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${yourAuthToken}` // Include your Cognito token
+                'Authorization': `Bearer ${authToken}` // Include your Cognito token
             }
         });
         const result = await response.json();
@@ -104,6 +105,7 @@ function signout() {
 
 async function checkAuthStatus() {
     const authToken = localStorage.getItem('authToken');
+    console.log(authToken)
     if (!authToken) {
         document.querySelector('.login-button').style.display = 'block';
         document.querySelector('.signout-button').style.display = 'none';
