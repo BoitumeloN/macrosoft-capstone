@@ -1,0 +1,5 @@
+../.aws-sam/
+.aws-sam/
+original_template.yaml
+post_confirmation.zip
+samconfig.toml

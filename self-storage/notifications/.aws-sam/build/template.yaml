@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  StorageNotificationsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: StorageNotifications
+  SendNotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: send_notification.lambda_handler
+      Runtime: python3.9
+      CodeUri: SendNotificationFunction
+      MemorySize: 128
+      Timeout: 10
+      Policies:
+      - SNSPublishMessagePolicy:
+          TopicName:
+            Ref: StorageNotificationsTopic
+    Metadata:
+      SamResourceId: SendNotificationFunction
+  NotificationApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      DefinitionBody:
+        openapi: 3.0.1
+        info:
+          title: Self Storage Notifications API
+          version: 1.0.0
+        paths:
+          /send-notification:
+            post:
+              operationId: SendNotification
+              responses:
+                '200':
+                  description: Notification sent successfully
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        subject:
+                          type: string
+                        message:
+                          type: string
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendNotificationFunction.Arn}/invocations
+                httpMethod: POST
+                type: aws_proxy

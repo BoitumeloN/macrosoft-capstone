@@ -1,0 +1,3 @@
+paypalrestsdk
+boto3
+requests

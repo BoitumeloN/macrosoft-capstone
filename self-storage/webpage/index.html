@@ -11,12 +11,16 @@
         .button { background: #35424a; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
         .button:hover { background: #2c3e50; }
         .unit { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .login-button { position: absolute; top: 25px; right: 120px; }
+        .signout-button { display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>Macrosoft-Capstone-DSstorage</h1>
+    <h1>Macrosoft-Self-Storage</h1>
+    <button class="button login-button" onclick="login()">Login</button>
+    <button class="button signout-button" onclick="signout()">Sign Out</button>
 </header>
 
 <div class="container">
@@ -24,6 +28,6 @@
     <div id="storageUnits"></div>
     <button class="button" onclick="fetchStorageUnits()">Refresh Units</button>
 </div>
-<script src="./script.js"></script>_
+<script src="./script.js"></script>
 </body>
 </html>

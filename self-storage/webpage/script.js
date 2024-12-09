@@ -1,5 +1,7 @@
+const apiEndpoint = 'https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod';
+
 async function fetchStorageUnits() {
-    const apiEndpoint = 'https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage_units';
+    const apiEndpoint = 'https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units';
     try {
         const response = await fetch(apiEndpoint);
         const units = await response.json();
@@ -17,7 +19,7 @@ async function fetchStorageUnits() {
                 <p>Unit Size: ${unit.Size}</p>
                 <p>Status: ${unit.Status}</p>
                 ${unit.Status === 'Available' ? `<button class="button" onclick="bookUnit('${unit.unitid}')">Book Now</button>` : ''}
-                ${unit.Status === 'Booked' ? `<button class="button" onclick="cancelRental('${unit.UnitId}')">Cancel</button>` : ''}
+                ${unit.Status === 'Booked' ? `<button class="button" onclick="cancelRental('${unit.unitid}')">Cancel</button>` : ''}
             `;
             unitsContainer.appendChild(unitDiv);
         });
@@ -27,7 +29,13 @@ async function fetchStorageUnits() {
 }
 
 async function bookUnit(unitId) {
-    const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
+    const authToken = await checkAuthStatus();
+    if (!authToken) {
+        login(); // Redirect to login if not authenticated
+        return;
+    }
+
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, { method: 'POST' });
         const result = await response.json();
@@ -40,7 +48,7 @@ async function bookUnit(unitId) {
 
 
 async function updateStatus(unitId, newStatus) {
-    const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, {
             method: 'PUT', // Change method to PUT for updates
@@ -59,7 +67,13 @@ async function updateStatus(unitId, newStatus) {
 
 
 async function cancelRental(unitId) {
-    const apiEndpoint = `https://r6cxhs5fw6.execute-api.eu-west-1.amazonaws.com/Prod/storage-units/${unitId}`;
+    const authToken = await checkAuthStatus();
+    if (!authToken) {
+        login(); // Redirect to login if not authenticated
+        return;
+    }
+
+    const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, {
             method: 'DELETE',
@@ -75,5 +89,52 @@ async function cancelRental(unitId) {
     }
 }
 
-// Initial fetch
+function login() {
+    // Redirect to the Cognito login page
+    const cognitoLoginUrl = 'https://eu-west-1pv6wty3qq.auth.eu-west-1.amazoncognito.com/login?client_id=44t95jhbmn74mjqh99tn2lbhih&response_type=code&scope=email+openid+phone&redirect_uri=https%3A%2F%2Fstaging.d3ag89p672ppgq.amplifyapp.com%2F';
+    window.location.href = cognitoLoginUrl;
+}
+
+
+function signout() {
+    // Clear the authentication token and redirect to the home page
+    localStorage.removeItem('authToken');
+    window.location.href = '/';
+}
+
+async function checkAuthStatus() {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+        document.querySelector('.login-button').style.display = 'block';
+        document.querySelector('.signout-button').style.display = 'none';
+        return authToken !== null;
+    }
+
+    try {
+        const response = await fetch(`${apiEndpoint}/validateAuthToken`, {
+
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authToken
+            }
+        });
+
+        if (response.status === 200) {
+            document.querySelector('.login-button').style.display = 'none';
+            document.querySelector('.signout-button').style.display = 'block';
+        } else {
+            document.querySelector('.login-button').style.display = 'block';
+            document.querySelector('.signout-button').style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error checking auth status:', error);
+        document.querySelector('.login-button').style.display = 'block';
+        document.querySelector('.signout-button').style.display = 'none';
+    }
+}
+
+// Initial fetch and check authentication status
 fetchStorageUnits();
+checkAuthStatus()
+

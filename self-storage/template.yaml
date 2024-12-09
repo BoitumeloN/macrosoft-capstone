@@ -16,15 +16,54 @@ Globals:
       LogFormat: JSON
 
 Parameters:
+  UserPoolId:
+    Type: String
+    Description: The Id of the user pool
+  UserPoolClientId:
+    Type: String
+    Description: The Id of the app client
   UserPoolAdminGroupName:
     Description: User pool group name for API administrators 
     Type: String
     Default: apiAdmins
+  S3Bucket:
+    Type: String
+    Description: The name of the existing S3 bucket
 
-    
 Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !Sub ${S3Bucket}.s3.amazonaws.com
+            Id: S3Origin
+            OriginPath: /frontend/webpage
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+          
+
   SUnitTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: !Sub ${AWS::StackName}-Unit
       AttributeDefinitions:
@@ -66,8 +105,6 @@ Resources:
             ProjectionType: ALL    
       BillingMode: PAY_PER_REQUEST
 
-
-
   ViewUnitsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -80,7 +117,7 @@ Resources:
           TableName: !Ref SUnitTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref SUnitTable
+          UNITS_TABLE: !Ref SUnitTable
       Events:
         ApiEvent:
           Type: Api
@@ -88,132 +125,110 @@ Resources:
             Path: /storage_units
             Method: get
             RestApiId: !Ref RestAPI  
+            Auth:
+              Authorizer: NONE  # No authentication required
 
   BookUnitsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: storage_units/src/api
+      CodeUri: storage_units/src/api 
       Handler: book_units.lambda_handler
       Runtime: python3.9
       Tracing: Active
       Policies:
-        DynamoDBReadPolicy:
-          TableName: !Ref SUnitTable
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SUnitTable}
       Environment:
         Variables:
-          TABLE_NAME: !Ref SUnitTable
+          UNITS_TABLE: !Ref SUnitTable
       Events:
         ApiEvent:
           Type: Api
           Properties:
             Path: /storage_units/{unitid}
             Method: put
-            RestApiId: !Ref RestAPI     
+            RestApiId: !Ref RestAPI
+            Auth:
+              Authorizer: CognitoAuthorizer     
 
-  # Role:
-  # Type: AWS::IAM::Role
-  # Properties:
-  #   AssumeRolePolicyDocument:
-  #     Version: '2012-10-17'
-  #     Statement:
-  #       - Effect: Allow
-  #         Principal:
-  #           Service: lambda.amazonaws.com
-  #         Action: sts:AssumeRole
-  #   Policies:
-  #     - PolicyName: LambdaExecutionPolicy
-  #       PolicyDocument:
-  #         Version: '2012-10-17'
-  #         Statement:
-  #           - Effect: Allow 
-  #             Action:
-  #               - s3:ListBucket
-  #               - s3:GetObject
-  #               - lambda:InvokeFunction
-  #             Resource: '*'      
-
-
-   # Cognito User Pool
-  UserPool:
-    Type: AWS::Cognito::UserPool
+  CancelRentalFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      UserPoolName: !Sub ${AWS::StackName}-UserPool
-      AliasAttributes:
-        - email
-      AutoVerifiedAttributes:
-        - email
-      # MfaConfiguration: OFF
-      # PasswordPolicy:
-      #   MinimumLength: 8
-      #   RequireUppercase: true
-      #   RequireLowercase: true
-      #   RequireNumbers: true
-      #   RequireSymbols: true
-      #   TemporaryPasswordValidityDays: 7
-      # AccountRecoverySetting:
-      #   RecoveryMechanisms:
-      #     - Name: "verified_email"
-      #       Priority: 1
-      #     - Name: "verified_phone_number"
-      #       Priority: 2
-      Schema:
-        - Name: given_name
-          AttributeDataType: String
-          Required: true
-          Mutable: true
-        - Name: family_name
-          AttributeDataType: String
-          Required: true
-          Mutable: true
-        - Name: address
-          AttributeDataType: String
-          Required: true
-          Mutable: true
-        - Name: email
-          AttributeDataType: String
-          Required: false
-          Mutable: true
-        - Name: phone_number
-          AttributeDataType: String
-          Required: false
-          Mutable: true
+      CodeUri: storage_units/src/api
+      Handler: cancel_units.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBCrudPolicy:
+          TableName: !Ref SUnitTable
+      Environment:
+        Variables:
+          UNITS_TABLE: !Ref SUnitTable
+      Events:
+        CancelRental:
+          Type: Api
+          Properties:
+            Path: /storage_units/{unitid}/cancel
+            Method: post
+            RestApiId: !Ref RestAPI  
+            Auth:
+              Authorizer: CognitoAuthorizer   
 
-  # Cognito User Pool Client
-  UserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
+  ManageUnitStatusFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      ClientName: !Sub ${AWS::StackName}UserPoolClient
-      UserPoolId: !Ref UserPool
-      ExplicitAuthFlows:
-        - ALLOW_REFRESH_TOKEN_AUTH
-        - ALLOW_USER_PASSWORD_AUTH
-        - ALLOW_USER_SRP_AUTH
-      GenerateSecret: false
-      PreventUserExistenceErrors: ENABLED
-      RefreshTokenValidity: 30
-      SupportedIdentityProviders: 
-        - COGNITO
-      UserPoolId: !Ref UserPool
-      AllowedOAuthFlowsUserPoolClient: true
-      AllowedOAuthFlows:
-        - "code"
-      AllowedOAuthScopes:
-        - "email"
-        - "openid"
-        - "phone"
-      CallbackURLs:
-        - "http://localhost:5000"
-      # TokenValidityUnits:
-      #   AccessToken: "minutes"
-      #   IdToken: "minutes"
-      #   RefreshToken: "days"
-      # AccessTokenValidity: 60    # Valid for 60 minutes
-      # IdTokenValidity: 60        # Valid for 60 minutes
-      # RefreshTokenValidity: 30 
-      # PreventUserExistenceErrors: "ENABLED"
-      # EnableTokenRevocation: true
-      # EnablePropagateAdditionalUserContextData: false
-  
+      CodeUri: storage_units/src/api
+      Handler: manage_unit_status.lambda_handler
+      Runtime: python3.9
+      Tracing: Active
+      Policies:
+        DynamoDBCrudPolicy:
+          TableName: !Ref SUnitTable
+      Environment:
+        Variables:
+          UNITS_TABLE: !Ref SUnitTable
+      Events:
+        GetUnitStatus:
+          Type: Api
+          Properties:
+            Path: /storage_units/status/{status}
+            Method: get
+            RestApiId: !Ref RestAPI
+            Auth:
+              Authorizer: NONE 
+        UpdateUnitStatus:
+          Type: Api
+          Properties:
+            Path: /storage_units/{unitid}/status/{status}
+            Method: put
+            RestApiId: !Ref RestAPI
+            Auth:
+              Authorizer: NONE  
+
+  PostConfirmationLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cognito_auth/post_confirmation.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPoolId
+          ADMIN_GROUP_NAME: !Ref UserPoolAdminGroupName
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminAddUserToGroup
+              Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+      CodeUri: s3://macrosoft-capstone-storage/code/post_confirmation.zip
+      MemorySize: 128
+      Timeout: 5
 
   AuthorizerFunction:
     Type: AWS::Serverless::Function
@@ -222,17 +237,94 @@ Resources:
       Description: Handler for Lambda authorizer
       Environment:
         Variables:
-          USER_POOL_ID: !Ref UserPool
-          APPLICATION_CLIENT_ID: !Ref UserPoolClient
+          USER_POOL_ID: !Ref UserPoolId
+          APPLICATION_CLIENT_ID: !Ref UserPoolClientId
           ADMIN_GROUP_NAME: !Ref UserPoolAdminGroupName
       Tags:
         Stack: !Sub "${AWS::StackName}"
 
-  UserPoolDomain:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties: 
-      Domain: !Ref UserPoolClient
-      UserPoolId: !Ref UserPool
+  ValidateAuthTokenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cognito_auth/validate_auth_token.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPoolId
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:GetUser
+                - cognito-idp:AdminListGroupsForUser
+              Resource: "*"
+      Events:
+        ValidateAuthTokenApi:
+          Type: Api
+          Properties:
+            Path: /validateAuthToken
+            Method: post
+
+  # Users Group
+  TenantsUsersGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      StageName: Prod
+      TracingEnabled: true
+      Tags:
+        Name: !Sub "${AWS::StackName}-API"
+        Stack: !Sub "${AWS::StackName}" 
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+            Identity:
+              Headers:
+                - Authorization
+                  
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow 
+                Action:
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - lambda:InvokeFunction
+                Resource: '*'      
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "CognitoPostConfirmationPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "cognito-idp:AdminAddUserToGroup"
+                Resource: "*"  
 
   ApiAdministratorsUserPoolGroup:
     Type: AWS::Cognito::UserPoolGroup
@@ -240,16 +332,17 @@ Resources:
       Description: User group for API Administrators
       GroupName: !Ref UserPoolAdminGroupName
       Precedence: 0
-      UserPoolId: !Ref UserPool
+      UserPoolId: !Ref UserPoolId
 
-  RestAPI:
-    Type: AWS::Serverless::Api
+  # Users Group
+  TenantsUsersGroup:
+    Type: AWS::Cognito::UserPoolGroup
     Properties:
-      StageName: Prod
-      TracingEnabled: true
-      Tags:
-        Name: !Sub "${AWS::StackName}-API"
-        Stack: !Sub "${AWS::StackName}"            
+      UserPoolId: !Ref UserPoolId
+      GroupName: TenantsUsersGroup
+      Description: "Group for general application users"
+      Precedence: 2 
+             
 
 Outputs:
   StoreUnitTable:
@@ -260,14 +353,13 @@ Outputs:
     Description: "API Gateway endpoint URL"
     Value: !Sub "https://${RestAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod"    
 
-
   UserPool:
     Description: Cognito User Pool ID
-    Value: !Ref UserPool
+    Value: !Ref UserPoolId
 
   UserPoolClient:
     Description: Cognito User Pool Application Client ID
-    Value: !Ref UserPoolClient
+    Value: !Ref UserPoolClientId
 
   UserPoolAdminGroupName:
     Description: User Pool group name for API administrators
@@ -275,8 +367,12 @@ Outputs:
   
   CognitoLoginURL:
     Description: Cognito User Pool Application Client Hosted Login UI URL
-    Value: !Sub 'https://${UserPoolClient}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${UserPoolClient}&response_type=code&redirect_uri=http://localhost'
+    Value: !Sub 'https://${UserPoolClientId}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${UserPoolClientId}&response_type=code&redirect_uri=https://staging.d3ag89p672ppgq.amplifyapp.com/'
 
   CognitoAuthCommand:
     Description: AWS CLI command for Amazon Cognito User Pool authentication
-    Value: !Sub 'aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH --client-id ${UserPoolClient} --auth-parameters USERNAME=<user@example.com>,PASSWORD=<password> --query "AuthenticationResult.IdToken" --output text'
+    Value: !Sub 'aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH --client-id ${UserPoolClientId} --auth-parameters USERNAME=<user@example.com>,PASSWORD=<password> --query "AuthenticationResult.IdToken" --output text'
+
+  CloudFrontDistributionDomainName:
+    Description: The domain name of the CloudFront distribution
+    Value: !GetAtt CloudFrontDistribution.DomainName

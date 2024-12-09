@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Self Storage Application
+
+Resources:
+
+  BillingDetailsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: BillingDetails
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ProcessPaymentApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: PaymentApi
+      StageName: Prod
+
+  ProcessPaymentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/api
+      Handler: process_payment.lambda_handler
+      Runtime: python3.9
+      Policies:
+        - DynamoDBCrudPolicy: 
+            TableName: BillingDetails
+      Environment:
+        Variables:
+          PAYPAL_CLIENT_ID: AWiNyGjGGsBkUdK2BIgGEromigu4QFVYW05lKt8aeYXrfLyrnLVBt8Lbad0AaKehWnVUvz5w9Mv95Yh9
+          PAYPAL_SECRET: EJUE-kxl1fc1ULsuI9Xpoov3uDMJTYT3MclsiLbK3OAKw5v8iMhXupXsUROYSF0p-sIkKKKEap7G5IZ7
+      Events:
+        PaymentApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ProcessPaymentApi
+            Path: /payment
+            Method: post
+
+  GetBillingDetailsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: BillingApi
+      StageName: Prod
+
+  GetBillingDetailsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/api
+      Handler: get_billing_details.lambda_handler
+      Runtime: python3.9
+      Policies:
+        - DynamoDBCrudPolicy: 
+            TableName: BillingDetails
+      Events:
+        BillingApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref GetBillingDetailsApi
+            Path: /billing
+            Method: get
+
+Outputs:
+  ProcessPaymentApi:
+    Description: "API Gateway endpoint URL for Payment function"
+    Value: !Sub "https://${ProcessPaymentApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+    
+  GetBillingDetailsApi:
+    Description: "API Gateway endpoint URL for Billing function"
+    Value: !Sub "https://${GetBillingDetailsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
