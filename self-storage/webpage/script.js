@@ -91,7 +91,7 @@ async function cancelRental(unitId) {
 
 function login() {
     // Redirect to the Cognito login page
-    const cognitoLoginUrl = 'https://eu-west-1pv6wty3qq.auth.eu-west-1.amazoncognito.com/login?client_id=44t95jhbmn74mjqh99tn2lbhih&response_type=code&scope=email+openid+phone&redirect_uri=https%3A%2F%2Fstaging.d3ag89p672ppgq.amplifyapp.com%2F';
+    const cognitoLoginUrl = 'https://eu-west-1pv6wty3qq.auth.eu-west-1.amazoncognito.com/login?client_id=44t95jhbmn74mjqh99tn2lbhih&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=https%3A%2F%2Fmain.d2v7oqvnc2mjzz.amplifyapp.com%2F';
     window.location.href = cognitoLoginUrl;
 }
 
