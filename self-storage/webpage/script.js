@@ -12,6 +12,7 @@ async function fetchStorageUnits() {
         units.forEach(unit => {
             const unitDiv = document.createElement('div');
             unitDiv.className = 'unit';
+            console.log(1);
             unitDiv.innerHTML = `
                 <p>Unit Id: ${unit.unitid}</p>
                 <p>Town: ${unit.Town}</p>
@@ -28,6 +29,12 @@ async function fetchStorageUnits() {
 }
 
 async function bookUnit(unitId) {
+    const authToken = await checkAuthStatus();
+    if (!authToken) {
+        login(); // Redirect to login if not authenticated
+        return;
+    }
+
     const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, { method: 'POST' });
@@ -60,6 +67,12 @@ async function updateStatus(unitId, newStatus) {
 
 
 async function cancelRental(unitId) {
+    const authToken = await checkAuthStatus();
+    if (!authToken) {
+        login(); // Redirect to login if not authenticated
+        return;
+    }
+
     const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${unitId}`;
     try {
         const response = await fetch(apiEndpoint, {
@@ -94,7 +107,7 @@ async function checkAuthStatus() {
     if (!authToken) {
         document.querySelector('.login-button').style.display = 'block';
         document.querySelector('.signout-button').style.display = 'none';
-        return;
+        return authToken !== null;
     }
 
     try {
@@ -123,5 +136,5 @@ async function checkAuthStatus() {
 
 // Initial fetch and check authentication status
 fetchStorageUnits();
-checkAuthStatus();
+checkAuthStatus()
 

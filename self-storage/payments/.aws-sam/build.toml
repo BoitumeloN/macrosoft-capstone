@@ -5,7 +5,11 @@ codeuri = "/home/wethinkcode_/macrosoft-capstone/self-storage/payments/src/api"
 runtime = "python3.9"
 architecture = "x86_64"
 handler = "process_payment.lambda_handler"
+<<<<<<< Updated upstream
 manifest_hash = "ecd153d51e058691f0de17c3dd3da979"
+=======
+manifest_hash = ""
+>>>>>>> Stashed changes
 packagetype = "Zip"
 functions = ["ProcessPaymentFunction", "GetBillingDetailsFunction"]
 
