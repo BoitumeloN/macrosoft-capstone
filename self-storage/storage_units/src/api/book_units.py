@@ -5,9 +5,8 @@ from datetime import datetime
 from botocore.exceptions import ClientError
 
 # Prepare DynamoDB client
-UNITS_TABLE = os.getenv('TABLE_NAME')
-if not UNITS_TABLE:
-    raise RuntimeError("Environment variable 'TABLE_NAME' is not set")
+UNITS_TABLE = os.getenv('UNITS_TABLE')
+
 
 dynamodb = boto3.resource('dynamodb')
 ddbTable = dynamodb.Table(UNITS_TABLE)

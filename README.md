@@ -9,7 +9,7 @@ curl $API_ENDPOINT/storage_units
 curl $API_ENDPOINT/storage_units
 
 #### List Units by availabilty
-curl -X GET "$API_ENDPOINT/storage_units/status/Unavailable"
+curl -X GET "$API_ENDPOINT/storage_units/status/Reserved"
 
 #### BookUnit 
 curl -X PUT "$API_ENDPOINT/storage_units/3" -H "Content-Type: application/json" -d '{"unitid": "1"}'
