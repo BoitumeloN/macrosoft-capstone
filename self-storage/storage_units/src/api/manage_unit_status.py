@@ -4,7 +4,7 @@ import os
 
 # Initialize DynamoDB resource
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.getenv('TABLE_NAME'))
+table = dynamodb.Table(os.getenv('UNITS_TABLE'))
 
 def lambda_handler(event, context):
     http_method = event['httpMethod']

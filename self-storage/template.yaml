@@ -29,8 +29,21 @@ Parameters:
   S3Bucket:
     Type: String
     Description: The name of the existing S3 bucket
+  LoggingBucket:
+    Type: String
+    Description: The name of the existing logging S3 bucket
+    Default: macrosoft-logs-bucket
 
 Resources:
+  # LoggingBucket:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     VersioningConfiguration:
+  #       Status: Enabled
+  #     OwnershipControls:
+  #       Rules:
+  #         - ObjectOwnership: BucketOwnerPreferred
+
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -40,7 +53,7 @@ Resources:
             Id: S3Origin
             OriginPath: /frontend/webpage
             S3OriginConfig:
-              OriginAccessIdentity: ''
+              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}
         Enabled: true
         DefaultRootObject: index.html
         DefaultCacheBehavior:
@@ -58,7 +71,52 @@ Resources:
               Forward: none
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
-          
+        # Logging:
+        #   Bucket: !Ref LoggingBucket
+        #   Prefix: cloudfront-logs/
+
+  LoggingBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LoggingBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontLogs
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: "s3:PutObject"
+            Resource: !Sub 'arn:aws:s3:::${LoggingBucket}/cloudfront-logs/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  # S3BucketPolicy:
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     Bucket: !Ref S3Bucket
+  #     PolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Sid: AllowCloudFrontServicePrincipalReadOnly
+  #           Effect: Allow
+  #           Principal:
+  #             Service: cloudfront.amazonaws.com
+  #           Action: "s3:GetObject"
+  #           Resource: !Sub 'arn:aws:s3:::${S3Bucket}/*'
+  #           Condition:
+  #             StringEquals:
+  #               AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  
+  
+
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Access identity for CloudFront to access S3 bucket
 
   SUnitTable:
     Type: AWS::DynamoDB::Table
