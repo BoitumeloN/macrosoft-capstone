@@ -3,3 +3,4 @@
 original_template.yaml
 post_confirmation.zip
 samconfig.toml
+**/__pycache__/
