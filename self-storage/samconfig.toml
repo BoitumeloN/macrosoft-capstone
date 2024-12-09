@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "self-storage-units"
+s3_bucket = "macrosoft-capstone-storage"
+region = "eu-west-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "UserPoolId=\"eu-west-1_PV6WtY3qq\" UserPoolClientId=\"44t95jhbmn74mjqh99tn2lbhih\" UserPoolAdminGroupName=\"api-admins\" S3Bucket=\"macrosoft-capstone-storage\""
+image_repositories = []
+profile = "macrosoft"
+s3_prefix = "self-storage-units"
