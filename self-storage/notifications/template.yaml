@@ -19,7 +19,7 @@ Resources:
       Timeout: 10
       Policies:
         - SNSPublishMessagePolicy:
-            TopicName: !Ref StorageNotificationsTopic  # Reference to the SNS Topic
+            TopicName: !Ref StorageNotificationsTopic  
 
   # API Gateway to trigger Lambda
   NotificationApi:

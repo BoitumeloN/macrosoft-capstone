@@ -3,9 +3,9 @@ import boto3
 from botocore.exceptions import ClientError
 
 # Initialize SNS client
-sns_client = boto3.client('sns', region_name='eu-west-1')  # Modify the region if necessary
+sns_client = boto3.client('sns', region_name='eu-west-1')
 
-# SNS that you created
+# SNS Topic ARN
 SNS_TOPIC_ARN = 'arn:aws:sns:eu-west-1:820242915645:StorageNotification'
 
 def send_notification(subject, message):
@@ -29,9 +29,15 @@ def send_notification(subject, message):
         }
 
 def lambda_handler(event, context):
-    # Retrieve subject and message from the event
-    subject = event.get('subject', 'Self-Storage Notification')
-    message = event.get('message', 'Your self-storage unit has been successfully booked!')
+    # Ensure that subject and message are provided
+    subject = event.get('subject')
+    message = event.get('message')
+    
+    if not subject or not message:
+        return {
+            'statusCode': 400,
+            'body': json.dumps("Error: Both 'subject' and 'message' are required.")
+        }
 
     # Send the notification
     return send_notification(subject, message)
