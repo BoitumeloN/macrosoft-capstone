@@ -78,7 +78,7 @@ async function cancelRental(unitId) {
         const response = await fetch(apiEndpoint, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${yourAuthToken}` // Include your Cognito token
+                'Authorization': `Bearer 0` // Include your Cognito token
             }
         });
         const result = await response.json();
@@ -136,5 +136,13 @@ async function checkAuthStatus() {
 
 // Initial fetch and check authentication status
 fetchStorageUnits();
-checkAuthStatus()
+checkAuthStatus().then(isLoggedIn => {
+    if (!isLoggedIn) {
+        document.querySelector('.login-button').style.display = 'block';
+        document.querySelector('.signout-button').style.display = 'none';
+    } else {
+        document.querySelector('.login-button').style.display = 'none';
+        document.querySelector('.signout-button').style.display = 'block';
+    }
+});
 
