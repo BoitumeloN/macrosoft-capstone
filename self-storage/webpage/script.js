@@ -31,11 +31,11 @@ async function fetchStorageUnits() {
 
 // Function to book a storage unit
 async function bookUnit(unitId) {
-    // const authToken = await checkAuthStatus();
-    // if (!authToken) {
-    //     login(); // Redirect to login if not authenticated
-    //     return;
-    // }
+    const authToken = await checkAuthStatus();
+    if (!authToken) {
+        login(); // Redirect to login if not authenticated
+        return;
+    }
 
     const bookEndpoint = `${apiEndpoint}/storage_units/${unitId}`;
     try {
