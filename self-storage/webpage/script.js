@@ -39,7 +39,7 @@ async function bookUnit(unitId) {
 
     const apiEndpoint = `https://y1ceks7lrg.execute-api.eu-west-1.amazonaws.com/Prod/storage_units/${currentUnitId}`;
     try {
-        const response = await fetch(bookEndpoint, { 
+        const response = await fetch(apiEndpoint, { 
             method: 'POST', 
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
