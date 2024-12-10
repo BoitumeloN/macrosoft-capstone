@@ -98,11 +98,11 @@ function closeModal() {
 
 // Function to cancel a rental
 async function cancelRental(unitId) {
-    const authToken = await checkAuthStatus();
-    if (!authToken) {
-        login(); // Redirect to login if not authenticated
-        return;
-    }
+    // const authToken = await checkAuthStatus();
+    // if (!authToken) {
+    //     login(); // Redirect to login if not authenticated
+    //     return;
+    // }
 
     const cancelEndpoint = `${apiEndpoint}/storage_units/${unitId}/cancel`;
     try {
