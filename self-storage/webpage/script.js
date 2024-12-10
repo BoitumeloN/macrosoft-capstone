@@ -125,16 +125,14 @@ async function handleCognitoRedirect() {
             body: new URLSearchParams({
                 grant_type: 'authorization_code',
                 code: authCode,
-                redirect_uri: 'file://wsl.localhost/Ubuntu/home/boitumelo/macrosoft-capstone/self-storage/webpage/index.html',
+                redirect_uri: 'https://main.d2v7oqvnc2mjzz.amplifyapp.com',
                 client_id: '44t95jhbmn74mjqh99tn2lbhih',
-                // client_secret: 'your-cognito-client-secret' // Replace with actual secret
+                client_secret: 'your-cognito-client-secret' // Replace with actual secret
             })
         });
 
         const tokenData = await tokenResponse.json();
         if (tokenData.id_token) {
-            console.log('uth')
-            console.log(tokenData.id_token)
             localStorage.setItem('authToken', tokenData.id_token);
             window.location.href = '/'; // Redirect to home or desired page
         } else {
