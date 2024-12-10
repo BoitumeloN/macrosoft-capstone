@@ -324,9 +324,8 @@ Resources:
             Path: /validateAuthToken
             Method: post
 
-  # Users Group
-  TenantsUsersGroup:
-    Type: AWS::Cognito::UserPoolGroup
+  RestAPI:
+    Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
       TracingEnabled: true

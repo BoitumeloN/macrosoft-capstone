@@ -6,7 +6,7 @@
     <title>Digital Self-Storage</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
-        header { background: #35424a; color: #fff; padding: 10px 0; text-align: center; }
+        header { background: #35424a; color: #fff; padding: 10px 0; }
         .container { max-width: 800px; margin: auto; padding: 20px; background: #fff; border-radius: 5px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
         .button { background: #35424a; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
         .button:hover { background: #2c3e50; }
@@ -26,7 +26,23 @@
 <div class="container">
     <h2>Available Storage Units</h2>
     <div id="storageUnits"></div>
+    <!--Get Units Storage-->
     <button class="button" onclick="fetchStorageUnits()">Refresh Units</button>
+
+    <!-- Get Banking Details-->
+    <div id="bankingModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+        <div style="background:#fff; padding:20px; margin:100px auto; width:300px; border-radius:5px;">
+            <h2>Enter Banking Details</h2>
+            <label for="accountNumber">Card Number:</label>
+            <input type="text" id="accountNumber" /><br>
+            <label for="routingNumber">cvv:</label>
+            <input type="text" id="routingNumber" /><br>
+            <label for="exDate">Ex Date:</label>
+            <input type="text" id="exDate" /><br>
+            <button class="button" onclick="submitBankingDetails()">Submit</button>
+            <button class="button" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
 </div>
 <script src="./script.js"></script>
 </body>
