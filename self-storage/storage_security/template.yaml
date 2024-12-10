@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Resources:
+  # SNS Topic to handle notifications
+  StorageSecurityNotificationsTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      DisplayName: 'StorageSecurityNotifications'
+
+  # Lambda Function to manage storage unit security (e.g., unlocking)
+  ManageStorageSecurityFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: manage_security.lambda_handler
+      Runtime: python3.9
+      CodeUri: src/  
+      MemorySize: 128
+      Timeout: 10
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - "sns:Publish"
+              Resource: !Ref StorageSecurityNotificationsTopic
+
+  # API Gateway to interact with the Lambda function
+  StorageSecurityApi:
+    Type: 'AWS::Serverless::Api'
+    Properties:
+      StageName: 'prod'
+      DefinitionBody:
+        openapi: '3.0.1'
+        info:
+          title: 'Storage Security API'
+          version: '1.0.0'
+        paths:
+          /unlock-storage:
+            post:
+              operationId: UnlockStorage
+              responses:
+                '200':
+                  description: 'Storage unit unlocked successfully'
+                '400':
+                  description: 'Invalid request'
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        unit_id:
+                          type: string
+                        user_id:
+                          type: string
+              x-amazon-apigateway-integration:
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ManageStorageSecurityFunction.Arn}/invocations'
+                httpMethod: POST
+                type: aws_proxy
+          /grant-access:
+            post:
+              operationId: GrantAccess
+              responses:
+                '200':
+                  description: 'Access granted to storage unit'
+                '400':
+                  description: 'Invalid request'
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        unit_id:
+                          type: string
+                        user_id:
+                          type: string
+                        access_type:
+                          type: string
+                          enum:
+                            - temporary
+                            - permanent
+                        start_date:
+                          type: string
+                          format: date-time
+                        end_date:
+                          type: string
+                          format: date-time
+              x-amazon-apigateway-integration:
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ManageStorageSecurityFunction.Arn}/invocations'
+                httpMethod: POST
+                type: aws_proxy
+
+  # DynamoDB Table to track unit access
+  StorageUnitAccessLogs:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: 'StorageUnitAccessLogs'
+      AttributeDefinitions:
+        - AttributeName: 'unit_id'
+          AttributeType: 'S'
+        - AttributeName: 'access_time'
+          AttributeType: 'S'
+      KeySchema:
+        - AttributeName: 'unit_id'
+          KeyType: 'HASH'
+        - AttributeName: 'access_time'
+          KeyType: 'RANGE'
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+Outputs:
+  ApiUrl:
+    Description: 'URL for Storage Security API Gateway'
+    Value: !Sub 'https://${StorageSecurityApi}.execute-api.${AWS::Region}.amazonaws.com/prod/'
+
