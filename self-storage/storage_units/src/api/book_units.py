@@ -27,9 +27,11 @@ def lambda_handler(event, context):
             raise ValueError("Missing 'unitid' in request")
 
         # Extract the JWT token from the event
-        token = event['headers'].get('Authorization')
+        # Extract the JWT token from the 'Authorization' header
+        token = event['headers'].get('Authorization', '').split(' ')[-1]
         if not token:
             raise ValueError("Authorization token is missing")
+
 
         # Initialize the Cognito client
         cognito_client = boto3.client('cognito-idp')

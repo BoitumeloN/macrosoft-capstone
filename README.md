@@ -114,3 +114,12 @@ curl -X PUT "$API_ENDPOINT/storage_units/1/status/Available" -H "Content-Type: a
 
 #### Admin changes avaialability -Unit 5
 curl -X PUT "$API_ENDPOINT/storage_units/2/status/Reserved" -H "Content-Type: application/json" -d '{"unitid": "5"}'
+
+
+1. chmod +x cognito-auth.sh
+
+2. source ./cognito-auth.sh
+
+3. curl -X PUT "$API_ENDPOINT/storage_units/2" \
+    -H "Authorization: Bearer $ID_TOKEN" \
+    -H "Content-Type: application/json"
